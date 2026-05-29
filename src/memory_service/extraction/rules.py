@@ -3,11 +3,13 @@ import re
 from .keys import normalize_value, pet_key, KEY_LOCATION, KEY_EMPLOYMENT
 from ..models.domain import MemoryCandidate, MemoryType
 
-# Lookahead to stop value capture at sentence delimiters or trailing context words.
+# Lookahead to stop value capture at sentence delimiters, conjunctions, or
+# trailing temporal/filler phrases (e.g. "Munich last month" -> "Munich").
 _TRAIL_STOP = (
     r"(?=\s*[,.]"
     r"|\s+(?:now|and|but|so|then|though|because|since|when|where|while|after"
-    r"|before|until|unless|if|as)\b"
+    r"|before|until|unless|if|as"
+    r"|last|this|these|next|ago|yesterday|today|recently|currently|lately|for)\b"
     r"|\Z)"
 )
 

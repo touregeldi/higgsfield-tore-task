@@ -43,3 +43,13 @@ def test_preference_stops_at_trailing_conjunction():
     assert prefs, "expected at least one preference"
     assert all("and" not in c.key for c in prefs)
     assert any(c.value == "likes Python" for c in prefs)
+
+
+def test_location_stops_at_temporal_phrase():
+    cands = extract_rules(_user("Actually I moved to Munich last month"))
+    assert any(c.key == "location" and c.value == "Munich" for c in cands)
+
+
+def test_location_stops_at_for():
+    cands = extract_rules(_user("I live in Berlin for now"))
+    assert any(c.key == "location" and c.value == "Berlin" for c in cands)
