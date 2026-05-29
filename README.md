@@ -173,6 +173,21 @@ counter (the contract permits approximation) which keeps the hot path dependency
   captured as structured facts; recall still surfaces them via the recent-context tier, and
   the LLM layer captures them when enabled.
 
+### Known limitations (deliberately out of scope)
+
+These are documented rather than fixed, because they only bite outside the stated target of
+"single user, a few concurrent sessions":
+
+- **Concurrent writes to the same `(user_id, key)`.** `/turns` reads the current active
+  memory, then supersedes + inserts in one transaction. Two *simultaneous* `POST /turns` for
+  the **same user and same key** could each supersede the other's predecessor, briefly leaving
+  two active rows. Sequential ingestion (the eval pattern) is always correct. The fix is a
+  `SELECT … FOR UPDATE` on the key or a `UNIQUE (user_id, key) WHERE active` partial index;
+  omitted to avoid turning a rare race into hard request failures at this scale.
+- **Sync handlers on a threadpool.** Route handlers are `def` (FastAPI runs them in a
+  threadpool) and use the synchronous psycopg pool. Fine for a handful of concurrent sessions;
+  a high-concurrency deployment would move to `async def` + an async pool.
+
 ## 9. Running the tests
 
 Unit tests need no database:
