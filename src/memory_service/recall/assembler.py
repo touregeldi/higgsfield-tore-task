@@ -18,13 +18,17 @@ def assemble_context(
     max_tokens: int,
 ) -> tuple[str, list[Citation]]:
     """Priority under budget: (1) stable user facts, (2) query-relevant memories,
-    (3) recent context. Sections are labelled; items added until the budget fills."""
+    (3) recent context. Greedy-fill within a tier; once a tier is truncated for
+    budget, lower-priority tiers are not started (strict cross-tier priority)."""
     sections = [("User facts", facts), ("Relevant memories", relevant), ("Recent context", recent)]
     lines: list[str] = []
     citations: list[Citation] = []
     used = 0
+    truncated = False
     seen_turn: set[str] = set()
     for title, items in sections:
+        if truncated:
+            break
         header = f"## {title}"
         header_cost = count_tokens(header)
         section_started = False
@@ -32,6 +36,7 @@ def assemble_context(
             bullet = f"- {it.text}"
             cost = count_tokens(bullet) + (header_cost if not section_started else 0)
             if used + cost > max_tokens:
+                truncated = True
                 continue
             if not section_started:
                 lines.append(header)

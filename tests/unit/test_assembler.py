@@ -19,3 +19,12 @@ def test_assembler_prioritizes_facts_under_budget():
 def test_assembler_empty_inputs():
     ctx, cites = assemble_context([], [], [], max_tokens=100)
     assert ctx == "" and cites == []
+
+
+def test_assembler_skips_lower_tier_after_truncation():
+    facts = []
+    relevant = [ContextItem(text="word " * 40, turn_id="r1", score=0.9)]  # too big to fit
+    recent = [ContextItem(text="tiny", turn_id="rec1", score=0.1)]
+    ctx, cites = assemble_context(facts, relevant, recent, max_tokens=10)
+    assert "tiny" not in ctx               # recent NOT added: a higher tier was truncated
+    assert all(c.turn_id != "rec1" for c in cites)
