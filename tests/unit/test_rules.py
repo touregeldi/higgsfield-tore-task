@@ -35,3 +35,11 @@ def test_ignores_assistant_and_tool_messages():
     msgs = [{"role": "assistant", "content": "I live in Berlin"},
             {"role": "tool", "name": "x", "content": "I work at Stripe"}]
     assert extract_rules(msgs) == []
+
+
+def test_preference_stops_at_trailing_conjunction():
+    cands = extract_rules(_user("I love Python and I use it daily"))
+    prefs = [c for c in cands if c.type is MemoryType.preference]
+    assert prefs, "expected at least one preference"
+    assert all("and" not in c.key for c in prefs)
+    assert any(c.value == "likes Python" for c in prefs)

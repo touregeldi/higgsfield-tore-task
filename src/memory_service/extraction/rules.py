@@ -24,8 +24,8 @@ _PATTERNS = [
 ]
 
 _PET = re.compile(r"\b(?:walking|feeding|my dog|my cat|petting) ([A-Z][a-z]+)")
-_PREF_POS = re.compile(r"\bi (?:love|like|prefer|enjoy|am a fan of) ([\w .#+'-]+)", re.I)
-_PREF_NEG = re.compile(r"\bi (?:hate|dislike|can't stand|don't like) ([\w .#+'-]+)", re.I)
+_PREF_POS = re.compile(r"\bi (?:love|like|prefer|enjoy|am a fan of) ([\w .#+'-]+?)" + _TRAIL_STOP, re.I)
+_PREF_NEG = re.compile(r"\bi (?:hate|dislike|can't stand|don't like) ([\w .#+'-]+?)" + _TRAIL_STOP, re.I)
 
 
 def _user_texts(messages: list[dict]) -> list[str]:
