@@ -69,10 +69,24 @@ Issues caught by code review and integration tests, fixed before release:
   extractor closes this gap when enabled. Kept the fixture honest rather than adding a
   bespoke pattern to inflate the score.
 
-- **Test suite at release: 33 unit + 24 integration passing** (contract roundtrip, restart
-  persistence, concurrent-session isolation, malformed/oversized/unicode input, recall-quality
-  fixture). Fixture score **1.00** with the in-test fakes; the production stack uses real
-  MiniLM embeddings + cross-encoder rerank.
+## v0.6 — Live-stack verification (caught what the fakes hid)
+
+Running the real `docker compose` stack (real MiniLM + cross-encoder, not the in-test fakes)
+surfaced two issues unit/integration tests structurally could not:
+
+- **`Numpy is not available` in `/turns` and `/recall`.** torch 2.2.2's `tensor.numpy()` breaks
+  against numpy 2.x; an unpinned numpy got resolved to 2.x in the image. Pinned `numpy==1.26.4`.
+  Invisible to the test suite because tests inject `FakeEmbedder`/`FakeReranker` — only the
+  containerized `STEmbedder` exercises torch.
+- **Dirty fact value `"Munich last month"`.** The fixture's substring check ("Munich" ∈ value)
+  masked it; the live `/memories` view exposed it. Extended the trailing-stop guard with
+  temporal/filler words so the stored value is `"Munich"`.
+
+- **Release state: 35 unit + 24 integration passing.** Coverage: contract roundtrip, restart
+  persistence (verified live — write, `docker compose restart`, data survives the named
+  volume), concurrent-session isolation, malformed/oversized/unicode input, recall-quality
+  fixture. **Recall-quality score 1.00 (5/5)** measured both in-test (fakes) and against the
+  live real-model stack.
 
 ## Possible next iterations
 
