@@ -1,0 +1,28 @@
+{
+  "conversations": [
+    {"session_id": "alice", "user_id": "alice",
+     "turns": [
+       "I live in Berlin and I work at Stripe.",
+       "I just got back from walking Biscuit, my dog.",
+       "Actually I moved to Munich last month.",
+       "I love TypeScript for big projects."
+     ]},
+    {"session_id": "bob", "user_id": "bob",
+     "turns": [
+       "I'm a teacher in Toronto.",
+       "My cat Mittens keeps me company."
+     ]}
+  ],
+  "probes": [
+    {"query": "where does alice live now", "session_id": "alice", "user_id": "alice",
+     "expect_substring": "Munich"},
+    {"query": "what is the name of alice's dog", "session_id": "alice", "user_id": "alice",
+     "expect_substring": "Biscuit"},
+    {"query": "where does the owner of the dog Biscuit live", "session_id": "alice", "user_id": "alice",
+     "expect_substring": "Munich"},
+    {"query": "what does bob do for work", "session_id": "bob", "user_id": "bob",
+     "expect_substring": "teacher"},
+    {"query": "tell me about quantum physics", "session_id": "bob", "user_id": "bob",
+     "expect_absent": "quantum"}
+  ]
+}
