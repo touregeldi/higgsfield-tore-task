@@ -42,9 +42,11 @@ class MemoryRepository:
         with self._pool.connection() as conn:
             rows = conn.execute(
                 """SELECT id FROM memories
-                   WHERE active=TRUE AND (user_id IS NOT DISTINCT FROM %s OR session_id=%s)
+                   WHERE active=TRUE AND (
+                       (%s::text IS NOT NULL AND user_id = %s)
+                       OR (%s::text IS NULL AND session_id = %s))
                    ORDER BY embedding <=> %s::vector LIMIT %s""",
-                (user_id, session_id, embedding, limit),
+                (user_id, user_id, user_id, session_id, embedding, limit),
             ).fetchall()
         return [r[0] for r in rows]
 
@@ -54,10 +56,12 @@ class MemoryRepository:
             rows = conn.execute(
                 """SELECT id, ts_rank(fts, plainto_tsquery('english', %s)) AS rank
                    FROM memories
-                   WHERE active=TRUE AND (user_id IS NOT DISTINCT FROM %s OR session_id=%s)
+                   WHERE active=TRUE AND (
+                       (%s::text IS NOT NULL AND user_id = %s)
+                       OR (%s::text IS NULL AND session_id = %s))
                      AND fts @@ plainto_tsquery('english', %s)
                    ORDER BY rank DESC LIMIT %s""",
-                (query, user_id, session_id, query, limit),
+                (query, user_id, user_id, user_id, session_id, query, limit),
             ).fetchall()
         return [r[0] for r in rows]
 

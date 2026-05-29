@@ -32,3 +32,16 @@ def test_sessions_do_not_bleed(client):
                                      "user_id": "a", "max_tokens": 200}).json()
     assert "Paris" in a["context"]
     assert "Tokyo" not in a["context"] and "Cairo" not in a["context"]
+
+
+def test_two_users_sharing_session_id_do_not_bleed(client):
+    """Different users on the same session_id must not see each other's data
+    via /recall (covers both memory-search and recent-context tiers)."""
+    base = lambda user, city: {"session_id": "shared", "user_id": user,
+        "messages": [{"role": "user", "content": f"I live in {city}"}],
+        "timestamp": datetime(2026, 5, 29, tzinfo=timezone.utc).isoformat(), "metadata": {}}
+    client.post("/turns", json=base("ua", "Berlin"))
+    client.post("/turns", json=base("ub", "Tokyo"))
+    ua = client.post("/recall", json={"query": "where do I live", "session_id": "shared",
+                                      "user_id": "ua", "max_tokens": 256}).json()["context"]
+    assert "Berlin" in ua and "Tokyo" not in ua

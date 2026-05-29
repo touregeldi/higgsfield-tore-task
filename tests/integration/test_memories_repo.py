@@ -46,3 +46,23 @@ def test_search_vector_and_fts_return_ids(pool, ids):
     fts_ids = repo.search_fts("u1", "s1", "Berlin", limit=5)
     assert mid in vec_ids
     assert mid in fts_ids
+
+
+def test_search_does_not_leak_across_users_sharing_session_id(pool, ids):
+    """C1 regression: two users with the SAME session_id string must not see
+    each other's memories in search (cross-session/user scoping)."""
+    repo = MemoryRepository(pool)
+    t1 = ids(); _seed_turn(pool, ids, t1)
+    t2 = ids()
+    TurnRepository(pool).insert(Turn(id=t2, session_id="shared", user_id="u2",
+        messages=[{"role": "user", "content": "x"}],
+        timestamp=datetime(2026, 5, 29, tzinfo=timezone.utc), metadata={}))
+    # u1 and u2 both use session_id "shared"
+    m1 = ids(); repo.insert(m1, "u1", "shared", _cand("location", "Berlin"), t1, [0.5] * 384, None)
+    m2 = ids(); repo.insert(m2, "u2", "shared", _cand("location", "Tokyo"), t2, [0.5] * 384, None)
+    # u1's search must return only u1's memory, never u2's — even when querying
+    # by a term that only u2's memory contains, and even sharing the session_id.
+    assert m1 in repo.search_fts("u1", "shared", "Berlin", limit=10)
+    assert m2 not in repo.search_fts("u1", "shared", "Tokyo", limit=10)
+    vec = repo.search_vector("u1", "shared", [0.5] * 384, limit=10)
+    assert m1 in vec and m2 not in vec

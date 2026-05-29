@@ -50,7 +50,7 @@ class RecallService:
                              score=m.confidence)
                  for m in self._memories.active_facts(user_id)]
 
-        recent_turns = self._turns.recent_for_session(session_id, limit=2)
+        recent_turns = self._turns.recent_for_session(session_id, limit=2, user_id=user_id)
         recent = [ContextItem(text=self._summarize(t.messages), turn_id=t.id, score=0.1)
                   for t in recent_turns]
 

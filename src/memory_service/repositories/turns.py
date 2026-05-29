@@ -28,12 +28,18 @@ class TurnRepository:
             ).fetchone()
         return self._row(row) if row else None
 
-    def recent_for_session(self, session_id: str, limit: int = 5) -> list[Turn]:
+    def recent_for_session(self, session_id: str, limit: int = 5,
+                           user_id: str | None = None) -> list[Turn]:
+        # When a user_id is given, restrict to that user's turns so two users
+        # sharing a session_id don't see each other's recent context.
+        clause = "" if user_id is None else " AND user_id = %s"
+        params = (session_id,) if user_id is None else (session_id, user_id)
         with self._pool.connection() as conn:
             rows = conn.execute(
-                """SELECT id, session_id, user_id, messages, timestamp, metadata
-                   FROM turns WHERE session_id=%s ORDER BY timestamp DESC, created_at DESC LIMIT %s""",
-                (session_id, limit),
+                f"""SELECT id, session_id, user_id, messages, timestamp, metadata
+                    FROM turns WHERE session_id=%s{clause}
+                    ORDER BY timestamp DESC, created_at DESC LIMIT %s""",
+                (*params, limit),
             ).fetchall()
         return [self._row(r) for r in rows]
 
